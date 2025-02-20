@@ -1,7 +1,7 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Video } from "@/data/videos";
-import { Heart, MessageCircle, Share2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause } from "lucide-react";
 
 interface VideoPlayerProps {
   video: Video;
@@ -9,12 +9,38 @@ interface VideoPlayerProps {
 
 export function VideoPlayer({ video }: VideoPlayerProps) {
   const [isLiked, setIsLiked] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const toggleMute = () => {
+    if (iframeRef.current) {
+      const message = isMuted ? 'unMute' : 'mute';
+      iframeRef.current.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: message }), 
+        '*'
+      );
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const togglePlayback = () => {
+    if (iframeRef.current) {
+      const message = isPlaying ? 'pauseVideo' : 'playVideo';
+      iframeRef.current.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: message }), 
+        '*'
+      );
+      setIsPlaying(!isPlaying);
+    }
+  };
 
   return (
     <div className="video-item relative">
       <iframe
+        ref={iframeRef}
         className="w-full h-full"
-        src={`${video.url}?autoplay=1&mute=1&controls=0&loop=1`}
+        src={`${video.url}?autoplay=1&mute=1&controls=0&loop=1&enablejsapi=1`}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
       />
@@ -45,6 +71,28 @@ export function VideoPlayer({ video }: VideoPlayerProps) {
             <button className="action-button">
               <Share2 className="w-8 h-8" />
               <span className="action-count">{video.shares}</span>
+            </button>
+
+            <button 
+              className="action-button"
+              onClick={toggleMute}
+            >
+              {isMuted ? (
+                <VolumeX className="w-8 h-8 text-white" />
+              ) : (
+                <Volume2 className="w-8 h-8 text-white" />
+              )}
+            </button>
+
+            <button 
+              className="action-button"
+              onClick={togglePlayback}
+            >
+              {isPlaying ? (
+                <Pause className="w-8 h-8 text-white" />
+              ) : (
+                <Play className="w-8 h-8 text-white" />
+              )}
             </button>
           </div>
         </div>
